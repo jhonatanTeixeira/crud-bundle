@@ -1,0 +1,17 @@
+{
+    "name": "vox/crud-bundle",
+    "licence": "MIT",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Vox\\": "src/Vox"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "require": {
+        "php": ">=7",
+        "symfony/symfony": ">=2.8"
+    }
+}

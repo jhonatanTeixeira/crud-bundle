@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Vox\CrudBundle\Router\ApiRouteLoader">
+            <argument type="service" id="api.routes" />
+            <tag name="routing.loader" />
+        </service>
+        
+        <service id="Vox\CrudBundle\KernelEvents\ContentNegotiationSubscriber" autowire="true">
+            <argument type="service" id="jms_serializer.serializer" />
+            <tag name="kernel.event_subscriber" />
+        </service>
+        
+        <service id="Vox\CrudBundle\Entity\Subscriber\ValidateEntity">
+            <argument type="service" id="validator" />
+            <tag name="doctrine.event_subscriber" />
+        </service>
+        
+        <service
+            id="app.form.factory"
+            class="Vox\CrudBundle\Form\CrudFormFactory"
+            public="true"
+        >
+            <argument type="service" id="form.registry" />
+            <argument type="service" id="event_dispatcher" />
+        </service>
+    </services>
+</container>
