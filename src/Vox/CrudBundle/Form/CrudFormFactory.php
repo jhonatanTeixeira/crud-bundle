@@ -31,7 +31,7 @@ class CrudFormFactory extends FormFactory implements CrudFormFactoryInterface
     {
         $form = parent::create($type, $data, $options);
         
-        $formEvent = new CrudFormEvent($form, $data);
+        $formEvent = new FormEvent($form, $data);
         
         $this->eventDispatcher->dispatch(self::EVENT_POST_BUILD, $formEvent);
         $this->eventDispatcher->dispatch(sprintf('%s.%s', self::EVENT_POST_BUILD, $type), $formEvent);
@@ -44,23 +44,18 @@ class CrudFormFactory extends FormFactory implements CrudFormFactoryInterface
         $builder = parent::createNamedBuilder($name, $type, $data, $options);
         
         $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $formEvent) use ($type) {
-            $event    = new CrudFormEvent($formEvent->getForm(), $formEvent->getData());
-            $this->eventDispatcher->dispatch('crud.form.pre_submit.' . $type, $event);
-            $formEvent->setData($event->getData());
+            $this->eventDispatcher->dispatch('crud.form.pre_submit.' . $type, $formEvent);
         });
         
         $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event) use ($type) {
-            $event    = new CrudFormEvent($event->getForm(), $event->getData());
             $this->eventDispatcher->dispatch('crud.form.post_submit.' . $type, $event);
         });
         
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($type) {
-            $event    = new CrudFormEvent($event->getForm(), $event->getData());
             $this->eventDispatcher->dispatch('crud.form.pre_set_data.' . $type, $event);
         });
         
         $builder->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event) use ($type) {
-            $event    = new CrudFormEvent($event->getForm(), $event->getData());
             $this->eventDispatcher->dispatch('crud.form.post_set_data.' . $type, $event);
         });
         
