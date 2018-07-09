@@ -2,6 +2,7 @@
 
 namespace Vox\CrudBundle\Controller;
 
+use Doctrine\ORM\QueryBuilder;
 use InvalidArgumentException;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -9,6 +10,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
+use Vox\CrudBundle\Crud\FilterInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudExtraValuesInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudPostFlushableInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudStrategyInterface;
@@ -53,6 +55,11 @@ class CrudController
      */
     private $templates;
 
+    /**
+     * @var FilterInterface[]
+     */
+    private $filters;
+
     public function __construct(
         string $entityClassName,
         string $typeClassName,
@@ -62,7 +69,8 @@ class CrudController
         EventDispatcherInterface $eventDispatcher,
         RouterInterface $router,
         array $templates,
-        CrudStrategyInterface $paramConverter = null
+        CrudStrategyInterface $crudStrategy = null,
+        array $filters = []
     ) {
         $this->entityClassName   = $entityClassName;
         $this->typeClassName     = $typeClassName;
@@ -72,28 +80,37 @@ class CrudController
         $this->eventDispatcher   = $eventDispatcher;
         $this->router            = $router;
         $this->templates         = $templates;
-        $this->strategy          = $paramConverter ?? new DefaultCrudStrategy($entityClassName, $doctrine);
+        $this->strategy          = $crudStrategy ?? new DefaultCrudStrategy($entityClassName, $doctrine);
+        $this->filters           = $filters;
     }
 
     public function listAction(Request $request)
     {
         $page    = $request->get('page', 1);
         $limit   = $request->get('limit', 30);
-        $filters = $request->get('filters', []);
         $order   = $request->get('order', []);
 
-        if ($order) {
-            $order = [$order, $request->get('direction', 'ASC')];
+        /* @var $queryBuilder QueryBuilder */
+        $queryBuilder = $this->doctrine->getRepository($this->entityClassName)
+            ->createQueryBuilder('e');
+
+        foreach ($this->filters as $filter) {
+            $filter->applyFilter($queryBuilder, $request);
         }
 
-        $list = $this->doctrine->getRepository($this->entityClassName)
-            ->findBy($filters, $order, $limit, ($page - 1) * $limit);
+        $countQb = clone $queryBuilder;
 
-        $total = $this->doctrine
-            ->getManager()
-            ->getUnitOfWork()
-            ->getEntityPersister($this->entityClassName)
-            ->count($filters);
+        $total = $countQb->select('COUNT(1)')->getQuery()->getScalarResult();
+
+        $queryBuilder->setMaxResults($limit)->setFirstResult(($page - 1) * $limit);
+
+        if ($order) {
+            foreach ($order as $key => $value) {
+                $queryBuilder->addOrderBy($key, $value);
+            }
+        }
+
+        $list = $queryBuilder->getQuery()->execute();
 
         return $this->createParamList(['list' => $list, 'total' => $total]);
     }

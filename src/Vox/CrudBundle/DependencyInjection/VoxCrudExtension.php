@@ -11,6 +11,7 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Vox\CrudBundle\Controller\CrudController;
+use Vox\CrudBundle\Crud\Filter\SimpleAndFilter;
 
 /**
  * This is the class that loads and manages your bundle configuration.
@@ -49,6 +50,19 @@ class VoxCrudExtension extends Extension
                 'viewTemplate' => $routeParams['formTemplate'] ?? "/default/view.html.twig",
             ];
 
+            $filters = [];
+
+            if (isset($routeParams['queriable_fields'])) {
+                $container->register('crud.simple_filter', SimpleAndFilter::class)
+                    ->addArgument($routeParams['queriable_fields']);
+            }
+
+            if (isset($routeParams['filters'])) {
+                foreach ($routeParams['filters'] as $filter) {
+                    $filters[] = new Reference($filter);
+                }
+            }
+
             foreach ($operations as $operation) {
                 switch ($operation) {
                     case 'list':
@@ -86,8 +100,6 @@ class VoxCrudExtension extends Extension
                         break;
                 }
                 
-                //$container->register(\Symfony\Component\Form\FormFactory::class);
-                
                 $controller = new Definition(
                     $controllerClass, 
                     [
@@ -99,7 +111,8 @@ class VoxCrudExtension extends Extension
                         new Reference('event_dispatcher'),
                         new Reference('router'),
                         $templates,
-                        $strategy ? new Reference($strategy) : null
+                        $strategy ? new Reference($strategy) : null,
+                        $filters
                     ]
                 );
                 $controller->setPublic(true);
