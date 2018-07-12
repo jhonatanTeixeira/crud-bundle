@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Vox\CrudBundle\Controller\CrudController;
 use Vox\CrudBundle\Crud\Filter\SimpleAndFilter;
+use Vox\CrudBundle\Form\CrudFormEvent;
 
 /**
  * This is the class that loads and manages your bundle configuration.
@@ -39,7 +40,7 @@ class VoxCrudExtension extends Extension
             $entityName      = $routeParams['class'];
             $operations      = $routeParams['operations'];
             $type            = $routeParams['type'];
-            $contextClass    = $routeParams['contextObject'];
+            $contextClass    = $routeParams['contextObject'] ?? CrudFormEvent::class;
             $controllerClass = $routeParams['controllerClass'] ?? CrudController::class;
             $strategy        = $routeParams['strategy'] ?? null;
             $defaults        = ['_format' => 'html'];

@@ -12,14 +12,18 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
 use Vox\CrudBundle\Crud\FilterInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudExtraValuesInterface;
+use Vox\CrudBundle\Crud\Strategy\CrudListableInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudPostFlushableInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudStrategyInterface;
 use Vox\CrudBundle\Crud\Strategy\DefaultCrudStrategy;
+use Vox\CrudBundle\Crud\Strategy\DefaultListTrait;
 use Vox\CrudBundle\Form\CrudFormFactoryInterface;
 
 class CrudController
 {
-    private $entityClassName;
+    use DefaultListTrait;
+
+    private $className;
 
     private $typeClassName;
 
@@ -61,7 +65,7 @@ class CrudController
     private $filters;
 
     public function __construct(
-        string $entityClassName,
+        string $className,
         string $typeClassName,
         string $contextObjectName,
         RegistryInterface $doctrine,
@@ -72,7 +76,7 @@ class CrudController
         CrudStrategyInterface $crudStrategy = null,
         array $filters = []
     ) {
-        $this->entityClassName   = $entityClassName;
+        $this->className         = $className;
         $this->typeClassName     = $typeClassName;
         $this->contextObjectName = $contextObjectName;
         $this->doctrine          = $doctrine;
@@ -80,45 +84,29 @@ class CrudController
         $this->eventDispatcher   = $eventDispatcher;
         $this->router            = $router;
         $this->templates         = $templates;
-        $this->strategy          = $crudStrategy ?? new DefaultCrudStrategy($entityClassName, $doctrine);
+        $this->strategy          = $crudStrategy ?? new DefaultCrudStrategy($className, $doctrine);
         $this->filters           = $filters;
     }
 
     public function listAction(Request $request)
     {
-        $page    = $request->get('page', 1);
-        $limit   = $request->get('limit', 30);
-        $order   = $request->get('order', []);
+        if ($this->strategy instanceof CrudListableInterface) {
+            $total = $this->strategy->getTotals($request);
+            $list = $this->strategy->getResults($request);
 
-        /* @var $queryBuilder QueryBuilder */
-        $queryBuilder = $this->doctrine->getRepository($this->entityClassName)
-            ->createQueryBuilder('e');
-
-        foreach ($this->filters as $filter) {
-            $filter->applyFilter($queryBuilder, $request);
+            return $this->createParamList(['list' => $list, 'total' => $total]);
         }
 
-        $countQb = clone $queryBuilder;
-
-        $total = $countQb->select('COUNT(1)')->getQuery()->getScalarResult();
-
-        $queryBuilder->setMaxResults($limit)->setFirstResult(($page - 1) * $limit);
-
-        if ($order) {
-            foreach ($order as $key => $value) {
-                $queryBuilder->addOrderBy($key, $value);
-            }
-        }
-
-        $list = $queryBuilder->getQuery()->execute();
-
-        return $this->createParamList(['list' => $list, 'total' => $total]);
+        return $this->createParamList([
+            'list'  => $this->getResults($request),
+            'total' => $this->getTotals($request)
+        ]);
     }
     
     private function createParamList(array $params): array
     {
         if ($this->strategy instanceof CrudExtraValuesInterface) {
-            return array_merge($params, $this->strategy->getExtraViewValues());
+            return array_merge($params, $this->strategy->getExtraViewValues(), ['strategy' => $this->strategy]);
         }
         
         return $params;

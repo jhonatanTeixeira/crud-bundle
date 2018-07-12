@@ -2,10 +2,10 @@
 
 namespace Vox\CrudBundle\Form;
 
+use JMS\Serializer\EventDispatcher\Event;
 use Symfony\Component\Form\FormInterface;
-use Vox\PipelineBundle\Pipeline\PipelineContext;
 
-class CrudFormEvent extends PipelineContext
+class CrudFormEvent extends Event
 {
     /**
      * @var FormInterface

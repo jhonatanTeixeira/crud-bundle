@@ -69,7 +69,8 @@ class ContentNegotiationSubscriber implements EventSubscriberInterface
             'post' => 'form',
             'put'  => 'form',
             'get'  => 'form',
-            'form' => 'form',
+            'form'  => 'form',
+            'list' => 'list'
         ];
         
         $action = $actions[str_replace('Action', '', $action)];

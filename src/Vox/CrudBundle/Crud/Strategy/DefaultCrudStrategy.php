@@ -9,8 +9,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class DefaultCrudStrategy implements CrudStrategyInterface
+class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterface
 {
+    use DefaultListTrait;
+
     /**
      * @var string
      */
@@ -29,13 +31,13 @@ class DefaultCrudStrategy implements CrudStrategyInterface
     
     public function createDataObjectForGet(Request $request)
     {
-        if (!$request->attributes->has('id')) {
-            throw new BadRequestHttpException('no id on request');
+        if ($request->attributes->has('id')) {
+            $object = $this->doctrine
+                ->getRepository($this->className)
+                ->find($request->get('id'));
+        } else {
+            $object = $this->createDataObjectForPost();
         }
-        
-        $object = $this->doctrine
-            ->getRepository($this->className)
-            ->find($request->get('id'));
 
         if (!$object) {
             throw new NotFoundHttpException('object not found');
@@ -59,5 +61,10 @@ class DefaultCrudStrategy implements CrudStrategyInterface
         $object = $form->getData();
         
         $this->doctrine->getManager()->persist($object);
+    }
+
+    public function renderActions(): iterable
+    {
+        return [];
     }
 }
