@@ -67,4 +67,22 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
     {
         return [];
     }
+
+    public function getListFields(): iterable
+    {
+        $metadata = $this->doctrine->getManager()->getClassMetadata($this->className);
+
+        $fields = [];
+
+        foreach ($metadata->getFieldNames() as $fieldName) {
+            $fields[$fieldName] = $fieldName;
+        }
+
+        return $fields;
+    }
+
+    public function getRouteCreateRouteName(): string
+    {
+        return '';
+    }
 }

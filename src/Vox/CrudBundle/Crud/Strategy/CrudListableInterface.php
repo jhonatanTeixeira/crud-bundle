@@ -11,4 +11,8 @@ interface CrudListableInterface
     public function getTotals(Request $request): int;
 
     public function renderActions(): iterable;
+
+    public function getListFields(): iterable;
+
+    public function getRouteCreateRouteName(): string;
 }
