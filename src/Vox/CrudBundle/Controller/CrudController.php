@@ -62,7 +62,7 @@ class CrudController
     /**
      * @var FilterInterface[]
      */
-    private $filters;
+    private $filters = [];
 
     public function __construct(
         string $className,
