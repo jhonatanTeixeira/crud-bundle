@@ -36,7 +36,7 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
                 ->getRepository($this->className)
                 ->find($request->get('id'));
         } else {
-            $object = $this->createDataObjectForPost();
+            $object = $this->createDataObjectForPost($request);
         }
 
         if (!$object) {

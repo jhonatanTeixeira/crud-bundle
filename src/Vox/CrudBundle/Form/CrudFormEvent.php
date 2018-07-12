@@ -2,7 +2,7 @@
 
 namespace Vox\CrudBundle\Form;
 
-use JMS\Serializer\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\Form\FormInterface;
 
 class CrudFormEvent extends Event
