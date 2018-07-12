@@ -43,7 +43,7 @@ trait DefaultListTrait
         $limit   = $request->get('limit', 30);
         $order   = $request->get('order', []);
 
-        $queryBuilder = $this->createQueryBuilder($request, $entityClassName);
+        $queryBuilder = $this->createQueryBuilder($request);
 
         $queryBuilder->setMaxResults($limit)->setFirstResult(($page - 1) * $limit);
 
@@ -56,9 +56,9 @@ trait DefaultListTrait
         return $queryBuilder->getQuery()->execute();
     }
 
-    public function getTotals(Request $request, string $entityClassName): int
+    public function getTotals(Request $request): int
     {
-        return (int) $this->createQueryBuilder($request, $entityClassName)
+        return (int) $this->createQueryBuilder($request)
             ->select('COUNT(1)')
             ->getQuery()
             ->getScalarResult();
