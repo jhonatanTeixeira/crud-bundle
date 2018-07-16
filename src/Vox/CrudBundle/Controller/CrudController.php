@@ -48,12 +48,12 @@ class CrudController
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
-    
+
     /**
      * @var RouterInterface
      */
     private $router;
-    
+
     /**
      * @var array
      */
@@ -102,13 +102,13 @@ class CrudController
             'total' => $this->getTotals($request)
         ]);
     }
-    
+
     private function createParamList(array $params): array
     {
         if ($this->strategy instanceof CrudExtraValuesInterface) {
             return array_merge($params, $this->strategy->getExtraViewValues(), ['strategy' => $this->strategy]);
         }
-        
+
         return $params;
     }
 
@@ -126,7 +126,7 @@ class CrudController
         $form->handleRequest($request);
 
         $status = 200;
-        
+
         if ($form->isValid()) {
             $this->strategy->persistDataObject($form);
             $this->doctrine->getManager()->flush();
@@ -205,7 +205,7 @@ class CrudController
         $options = [];
         $options['action'] = $request->getUri();
 
-        if ($request->isMethod('GET')) {
+        if ($request->isMethod('GET') || $request->isMethod('PUT')) {
             $options['method'] = Request::METHOD_PUT;
 
             if (preg_match('/_formAction$/', $request->get('_route'))) {
@@ -222,7 +222,7 @@ class CrudController
             ->create($this->typeClassName, $object, $options);
 
         $eventClassname = $this->contextObjectName;
-        
+
         $this->eventDispatcher->dispatch(
             sprintf('%s.after_create_form', $request->get('_route')),
             new $eventClassname($form, $request)
@@ -230,7 +230,7 @@ class CrudController
 
         return $form;
     }
-    
+
     public function getTemplates(): array
     {
         return $this->templates;
