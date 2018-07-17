@@ -79,17 +79,17 @@ class VoxCrudExtension extends Extension
                         break;
                     case 'form':
                         $path    = sprintf('/%s/form', $name);
-                        $methods = ['get'];
+                        $methods = ['GET'];
                         $action  = 'formAction';
                         break;
                     case 'post':
                         $path    = sprintf('/%s', $name);
-                        $methods = ['POST'];
+                        $methods = ['POST', 'PATCH'];
                         $action  = 'postAction';
                         break;
                     case 'put':
                         $path    = sprintf('/%s/{id}', $name);
-                        $methods = ['PUT'];
+                        $methods = ['PUT', 'PATCH'];
                         $action  = 'putAction';
                         $requirements   = ["id" => "\d+"];
                         break;
@@ -100,14 +100,14 @@ class VoxCrudExtension extends Extension
                         $requirements = ["id" => "\d+"];
                         break;
                 }
-                
+
                 $controller = new Definition(
-                    $controllerClass, 
+                    $controllerClass,
                     [
-                        $entityName, 
-                        $type, 
-                        $contextClass, 
-                        new Reference('doctrine'), 
+                        $entityName,
+                        $type,
+                        $contextClass,
+                        new Reference('doctrine'),
                         new Reference('app.form.factory'),
                         new Reference('event_dispatcher'),
                         new Reference('router'),
@@ -117,28 +117,32 @@ class VoxCrudExtension extends Extension
                     ]
                 );
                 $controller->setPublic(true);
-                
+
                 $controllerService = sprintf('controler.%s', $entityName);
-                
+
                 $container->setDefinition($controllerService, $controller);
-                
-                $actionCallable = sprintf('%s:%s', $controllerService, $action);
-                
+
+                $actionCallable = sprintf(
+                    '%s:%s',
+                    $controllerService,
+                    in_array($action, ['postAction', 'putAction']) ? 'receiveDataAction' : $action
+                );
+
                 $defaults['_controller'] = $actionCallable;
-                
+
                 $route = new Definition(Route::class, [$path]);
                 $route->addMethodCall('setMethods', [$methods]);
                 $route->addMethodCall('setDefaults', [$defaults]);
                 $route->addMethodCall('setRequirements', [$requirements]);
                 $route->setPublic(false);
-                
+
                 $routeService = sprintf('route.%s.%s', $entityName, $action);
-                
+
                 $container->setDefinition($routeService, $route);
-                
+
                 $routes->addMethodCall('add', [sprintf('%s_%s', $name, $action), new Reference($routeService)]);
             }
-            
+
             $container->setDefinition('api.routes', $routes);
         }
     }

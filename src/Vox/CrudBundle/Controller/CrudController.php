@@ -112,45 +112,9 @@ class CrudController
         return $params;
     }
 
-    public function formAction(Request $request)
+    public function receiveDataAction(Request $request)
     {
-        $form = $this->createForm($request);
-
-        return ['form' => $form->createView()];
-    }
-
-    public function postAction(Request $request)
-    {
-        $form = $this->createForm($request);
-
-        $form->handleRequest($request);
-
-        $status = 200;
-
-        if ($form->isValid()) {
-            $this->strategy->persistDataObject($form);
-            $this->doctrine->getManager()->flush();
-
-            $eventClassName = $this->contextObjectName;
-
-            $this->eventDispatcher->dispatch(
-                sprintf('%s.after_post_flush', $request->get('_route')),
-                new $eventClassName($form, $request)
-            );
-
-            if ($this->strategy instanceof CrudPostFlushableInterface) {
-                return $this->strategy->postFlush($form->getData());
-            }
-        } else {
-            $status = 400;
-        }
-
-        return $this->createParamList(['form' => $form->createView(), 'status' => $status]);
-    }
-
-    public function putAction(Request $request)
-    {
-        if (!$request->get('id', false)) {
+        if ($request->isMethod('PUT') && !$request->get('id', false)) {
             throw new InvalidArgumentException('invalid id');
         }
 
@@ -160,16 +124,25 @@ class CrudController
 
         $status = 200;
 
-        if ($form->isValid()) {
+        if (!$request->isMethod('PATCH') && $form->isValid()) {
             $this->strategy->persistDataObject($form);
             $this->doctrine->getManager()->flush();
 
             $eventClassName = $this->contextObjectName;
 
-            $this->eventDispatcher->dispatch(
-                sprintf('%s.after_put_flush', $request->get('_route')),
-                new $eventClassName($form, $request)
-            );
+            if ($request->isMethod('POST')) {
+                $this->eventDispatcher->dispatch(
+                    sprintf('%s.after_post_flush', $request->get('_route')),
+                    new $eventClassName($form, $request)
+                );
+            }
+
+            if ($request->isMethod('PUT')) {
+                $this->eventDispatcher->dispatch(
+                    sprintf('%s.after_put_flush', $request->get('_route')),
+                    new $eventClassName($form, $request)
+                );
+            }
 
             if ($this->strategy instanceof CrudPostFlushableInterface) {
                 $response = $this->strategy->postFlush($form->getData());
@@ -179,10 +152,17 @@ class CrudController
                 }
             }
         } else {
-            $status = 400;
+            $status = $request->isMethod('PATCH') ? 200 : 400;
         }
 
         return $this->createParamList(['form' => $form->createView(), 'status' => $status]);
+    }
+
+    public function formAction(Request $request)
+    {
+        $form = $this->createForm($request);
+
+        return ['form' => $form->createView()];
     }
 
     public function getAction(Request $request)
@@ -205,7 +185,7 @@ class CrudController
         $options = [];
         $options['action'] = $request->getUri();
 
-        if ($request->isMethod('GET') || $request->isMethod('PUT')) {
+        if ($request->isMethod('GET') || $request->isMethod('PUT') || $request->isMethod('PATCH')) {
             $options['method'] = Request::METHOD_PUT;
 
             if (preg_match('/_formAction$/', $request->get('_route'))) {
