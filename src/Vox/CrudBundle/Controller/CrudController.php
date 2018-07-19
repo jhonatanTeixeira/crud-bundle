@@ -186,7 +186,7 @@ class CrudController
         $options['action'] = $request->getUri();
 
         if ($request->isMethod('GET') || $request->isMethod('PUT') || $request->isMethod('PATCH')) {
-            $options['method'] = Request::METHOD_PUT;
+            $options['method'] = $request->isMethod('GET') ? Request::METHOD_PUT : $request->getMethod();
 
             if (preg_match('/_formAction$/', $request->get('_route'))) {
                 $options['method'] = Request::METHOD_POST;

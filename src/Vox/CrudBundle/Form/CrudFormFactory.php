@@ -44,18 +44,22 @@ class CrudFormFactory extends FormFactory implements CrudFormFactoryInterface
         $builder = parent::createNamedBuilder($name, $type, $data, $options);
         
         $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $formEvent) use ($type) {
+            $this->eventDispatcher->dispatch(FormEvents::PRE_SUBMIT, $formEvent);
             $this->eventDispatcher->dispatch('crud.form.pre_submit.' . $type, $formEvent);
         });
         
         $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event) use ($type) {
+            $this->eventDispatcher->dispatch(FormEvents::POST_SUBMIT, $event);
             $this->eventDispatcher->dispatch('crud.form.post_submit.' . $type, $event);
         });
         
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($type) {
+            $this->eventDispatcher->dispatch(FormEvents::PRE_SET_DATA, $event);
             $this->eventDispatcher->dispatch('crud.form.pre_set_data.' . $type, $event);
         });
         
         $builder->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event) use ($type) {
+            $this->eventDispatcher->dispatch(FormEvents::POST_SET_DATA, $event);
             $this->eventDispatcher->dispatch('crud.form.post_set_data.' . $type, $event);
         });
         

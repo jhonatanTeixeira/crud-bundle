@@ -18,7 +18,11 @@
             <argument type="service" id="validator" />
             <tag name="doctrine.event_subscriber" />
         </service>
-        
+
+        <service id="Vox\CrudBundle\Form\FormPatchSubscriber">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
         <service
             id="app.form.factory"
             class="Vox\CrudBundle\Form\CrudFormFactory"
