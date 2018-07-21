@@ -19,9 +19,9 @@
             <tag name="doctrine.event_subscriber" />
         </service>
 
-        <service id="Vox\CrudBundle\Form\FormPatchSubscriber">
-            <tag name="kernel.event_subscriber" />
-        </service>
+        <!--<service id="Vox\CrudBundle\Form\FormPatchSubscriber">-->
+            <!--<tag name="kernel.event_subscriber" />-->
+        <!--</service>-->
 
         <service
             id="app.form.factory"

@@ -4,7 +4,9 @@ namespace Vox\CrudBundle\KernelEvents;
 
 use JMS\Serializer\SerializerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -46,12 +48,22 @@ class ContentNegotiationSubscriber implements EventSubscriberInterface
                 ['setResponse', 1],
             ],
             KernelEvents::REQUEST => [
-                'deserialize',
+                ['disableFakePatch', 100],
+                ['deserialize'],
             ]
         ];
     }
 
-    public function setTemplate(\Symfony\Component\HttpKernel\Event\FilterControllerEvent $event)
+    public function disableFakePatch(GetResponseEvent $event)
+    {
+        $request = $event->getRequest();
+
+        if ($request->isMethod(Request::METHOD_PATCH) && $_SERVER['REQUEST_METHOD'] == Request::METHOD_POST) {
+            $request->setMethod($request->attributes->has('id') ? Request::METHOD_PUT : Request::METHOD_POST);
+        }
+    }
+
+    public function setTemplate(FilterControllerEvent $event)
     {
         list($controller, $action) = $event->getController();
 
