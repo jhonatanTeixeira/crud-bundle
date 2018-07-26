@@ -65,6 +65,10 @@ class ContentNegotiationSubscriber implements EventSubscriberInterface
 
     public function setTemplate(FilterControllerEvent $event)
     {
+        if (!is_array($event->getController())) {
+            return;
+        }
+
         list($controller, $action) = $event->getController();
 
         if (!$controller instanceof \Vox\CrudBundle\Controller\CrudController) {

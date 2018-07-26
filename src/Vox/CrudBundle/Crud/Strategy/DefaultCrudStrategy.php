@@ -17,18 +17,18 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
      * @var string
      */
     private $className;
-    
+
     /**
      * @var RegistryInterface
      */
     private $doctrine;
-    
+
     public function __construct(string $className, RegistryInterface $doctrine)
     {
         $this->className = $className;
         $this->doctrine  = $doctrine;
     }
-    
+
     public function createDataObjectForGet(Request $request)
     {
         if ($request->attributes->has('id')) {
@@ -50,16 +50,16 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
     {
         return (new ReflectionClass($this->className))->newInstance();
     }
-    
+
     public function createDataObjectForPut(Request $request)
     {
         return $this->createDataObjectForGet($request);
     }
-    
+
     public function persistDataObject(FormInterface $form)
     {
         $object = $form->getData();
-        
+
         $this->doctrine->getManager()->persist($object);
     }
 
@@ -84,5 +84,21 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
     public function getRouteCreateRouteName(): string
     {
         return '';
+    }
+
+    /**
+     * @return string
+     */
+    public function getClassName(): string
+    {
+        return $this->className;
+    }
+
+    /**
+     * @return RegistryInterface
+     */
+    public function getDoctrine(): RegistryInterface
+    {
+        return $this->doctrine;
     }
 }
