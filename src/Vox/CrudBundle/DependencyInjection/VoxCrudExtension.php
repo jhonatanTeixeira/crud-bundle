@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Vox\CrudBundle\Controller\CrudController;
 use Vox\CrudBundle\Crud\Filter\SimpleAndFilter;
+use Vox\CrudBundle\Crud\Strategy\DefaultCrudStrategy;
 use Vox\CrudBundle\Form\CrudFormEvent;
 
 /**
@@ -45,24 +46,12 @@ class VoxCrudExtension extends Extension
             $strategy        = $routeParams['strategy'] ?? null;
             $defaults        = ['_format' => 'html'];
             $requirements    = [];
+            $listOptions     = $routeParams['list_options'] ?? [];
             $templates       = [
                 'formTemplate' => $routeParams['formTemplate'] ?? "/default/form.html.twig",
                 'listTemplate' => $routeParams['formTemplate'] ?? "/default/list.html.twig",
                 'viewTemplate' => $routeParams['formTemplate'] ?? "/default/view.html.twig",
             ];
-
-            $filters = [];
-
-            if (isset($routeParams['queriable_fields'])) {
-                $container->register('crud.simple_filter', SimpleAndFilter::class)
-                    ->addArgument($routeParams['queriable_fields']);
-            }
-
-            if (isset($routeParams['filters'])) {
-                foreach ($routeParams['filters'] as $filter) {
-                    $filters[] = new Reference($filter);
-                }
-            }
 
             foreach ($operations as $operation) {
                 switch ($operation) {
@@ -113,7 +102,8 @@ class VoxCrudExtension extends Extension
                         new Reference('router'),
                         $templates,
                         $strategy ? new Reference($strategy) : null,
-                        $filters
+                        $listOptions,
+                        $name
                     ]
                 );
                 $controller->setPublic(true);
@@ -137,10 +127,21 @@ class VoxCrudExtension extends Extension
                 $route->setPublic(false);
 
                 $routeService = sprintf('route.%s.%s', $entityName, $action);
+                $routeName    = sprintf('%s_%s', $name, $action);
 
                 $container->setDefinition($routeService, $route);
+                $routes->addMethodCall('add', [$routeName, new Reference($routeService)]);
 
-                $routes->addMethodCall('add', [sprintf('%s_%s', $name, $action), new Reference($routeService)]);
+                if ($listOptions['use_simple_filter'] ?? false) {
+                    $container->register("$routeName.simple_filter", SimpleAndFilter::class)
+                        ->setArguments([$listOptions['simple_filter_fields'] ?? [], $entityName])
+                        ->addTag('kernel.event_listener', [
+                            'event'  => sprintf('%s.%s', DefaultCrudStrategy::EVENT_ADD_FILTERS, $routeName),
+                            'method' => 'applyFilter'
+                        ])
+                        ->setPublic(false)
+                    ;
+                }
             }
 
             $container->setDefinition('api.routes', $routes);

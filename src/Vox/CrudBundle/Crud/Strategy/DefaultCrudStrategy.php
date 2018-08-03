@@ -4,6 +4,8 @@ namespace Vox\CrudBundle\Crud\Strategy;
 
 use ReflectionClass;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -12,6 +14,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterface
 {
     use DefaultListTrait;
+
+    const EVENT_ADD_FILTERS = 'crud.event.add_list_filter';
 
     /**
      * @var string
@@ -23,10 +27,16 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
      */
     private $doctrine;
 
-    public function __construct(string $className, RegistryInterface $doctrine)
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    public function __construct(string $className, RegistryInterface $doctrine, EventDispatcherInterface $dispatcher)
     {
-        $this->className = $className;
-        $this->doctrine  = $doctrine;
+        $this->className       = $className;
+        $this->doctrine        = $doctrine;
+        $this->eventDispatcher = $dispatcher;
     }
 
     public function createDataObjectForGet(Request $request)
@@ -63,40 +73,11 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
         $this->doctrine->getManager()->persist($object);
     }
 
-    public function renderActions(): iterable
-    {
-        return [];
-    }
-
-    public function getListFields(): iterable
-    {
-        $metadata = $this->doctrine->getManager()->getClassMetadata($this->className);
-
-        $fields = [];
-
-        foreach ($metadata->getFieldNames() as $fieldName) {
-            $fields[$fieldName] = $fieldName;
-        }
-
-        return $fields;
-    }
-
-    public function getRouteCreateRouteName(): string
-    {
-        return '';
-    }
-
-    /**
-     * @return string
-     */
     public function getClassName(): string
     {
         return $this->className;
     }
 
-    /**
-     * @return RegistryInterface
-     */
     public function getDoctrine(): RegistryInterface
     {
         return $this->doctrine;

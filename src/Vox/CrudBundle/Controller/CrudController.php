@@ -21,8 +21,6 @@ use Vox\CrudBundle\Form\CrudFormFactoryInterface;
 
 class CrudController
 {
-    use DefaultListTrait;
-
     private $className;
 
     private $typeClassName;
@@ -62,7 +60,12 @@ class CrudController
     /**
      * @var FilterInterface[]
      */
-    private $filters = [];
+    private $listConfigs = [];
+
+    /**
+     * @var string
+     */
+    private $crudName;
 
     public function __construct(
         string $className,
@@ -74,7 +77,8 @@ class CrudController
         RouterInterface $router,
         array $templates,
         CrudStrategyInterface $crudStrategy = null,
-        array $filters = []
+        array $listConfigs = [],
+        string $crudName
     ) {
         $this->className         = $className;
         $this->typeClassName     = $typeClassName;
@@ -84,29 +88,55 @@ class CrudController
         $this->eventDispatcher   = $eventDispatcher;
         $this->router            = $router;
         $this->templates         = $templates;
-        $this->strategy          = $crudStrategy ?? new DefaultCrudStrategy($className, $doctrine);
-        $this->filters           = $filters;
+        $this->strategy          = $crudStrategy ?? new DefaultCrudStrategy($className, $doctrine, $eventDispatcher);
+        $this->listConfigs       = $listConfigs;
+        $this->crudName          = $crudName;
     }
 
     public function listAction(Request $request)
     {
-        if ($this->strategy instanceof CrudListableInterface) {
-            $total = $this->strategy->getTotals($request);
-            $list = $this->strategy->getResults($request);
-
-            return $this->createParamList(['list' => $list, 'total' => $total]);
+        if (!$this->strategy instanceof CrudListableInterface) {
+            throw new \HttpException('uninplemented method, your strategy must implement CrudListableInterface');
         }
 
+        $results = $this->strategy->getListResults($request)
+            ->setLimit($request->get('limit', 30))
+            ->setPage($request->get('page', 1))
+        ;
+
         return $this->createParamList([
-            'list'  => $this->getResults($request),
-            'total' => $this->getTotals($request)
+            'list'  => $results,
+            'total' => $results->count(),
+            'actions' => $this->listConfigs['actions'],
+            'listFields' => $this->listConfigs['list_fields'] ?: $this->getListFields(),
+            'listTitle' => $this->listConfigs['title'] ?? 'List data',
+            'filterType' => $this->listConfigs['filter_type'] ?? null,
+            'hasNewButton' => $this->listConfigs['has_new_button'],
         ]);
+    }
+
+    protected function getListFields(): iterable
+    {
+        $metadata = $this->doctrine->getManager()->getClassMetadata($this->className);
+
+        $fields = [];
+
+        foreach ($metadata->getFieldNames() as $fieldName) {
+            $fields[$fieldName] = $fieldName;
+        }
+
+        return $fields;
     }
 
     private function createParamList(array $params): array
     {
+        $params = array_merge($params, [
+            'strategy' => $this->strategy,
+            'crudName' => $this->crudName
+        ]);
+
         if ($this->strategy instanceof CrudExtraValuesInterface) {
-            return array_merge($params, $this->strategy->getExtraViewValues(), ['strategy' => $this->strategy]);
+            return array_merge($params, $this->strategy->getExtraViewValues());
         }
 
         return $params;

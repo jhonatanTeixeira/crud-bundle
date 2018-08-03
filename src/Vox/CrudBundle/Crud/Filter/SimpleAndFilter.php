@@ -2,22 +2,34 @@
 
 namespace Vox\CrudBundle\Crud\Filter;
 
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\HttpFoundation\Request;
+use Vox\CrudBundle\Crud\AddFilterEvent;
 use Vox\CrudBundle\Crud\FilterInterface;
 
-class SimpleAndFilter implements FilterInterface
+class SimpleAndFilter
 {
     private $fields;
 
-    public function __construct(array $fields)
+    private $className;
+
+    public function __construct(array $fields, string $className)
     {
-        $this->fields = $fields;
+        $this->fields    = $fields;
+        $this->className = $className;
     }
 
-    public function applyFilter(QueryBuilder $queryBuilder, Request $request): void
+    public function applyFilter(AddFilterEvent $event): void
     {
+        $queryBuilder = $event->getQueryBuilder();
+        $request      = $event->getRequest();
+
+        if (empty($this->fields)) {
+            $this->fields = $this->getFilterFields($event->getEntityManager());
+        }
+
         foreach ($this->fields as $field => $type) {
             if (!$request->query->has($field)) {
                 continue;
@@ -36,5 +48,18 @@ class SimpleAndFilter implements FilterInterface
                     throw new InvalidConfigurationException('invalid field filter type: like, exact allowed');
             }
         }
+    }
+
+    protected function getFilterFields(EntityManager $entityManager): iterable
+    {
+        $metadata = $entityManager->getClassMetadata($this->className);
+
+        $fields = [];
+
+        foreach ($metadata->getFieldNames() as $fieldName) {
+            $fields[$fieldName] = 'exact';
+        }
+
+        return $fields;
     }
 }

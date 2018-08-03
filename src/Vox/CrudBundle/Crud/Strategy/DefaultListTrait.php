@@ -4,8 +4,11 @@ namespace Vox\CrudBundle\Crud\Strategy;
 
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Vox\CrudBundle\Crud\AddFilterEvent;
 use Vox\CrudBundle\Crud\FilterInterface;
+use Vox\CrudBundle\Doctrine\PaginableCollection;
 
 trait DefaultListTrait
 {
@@ -20,9 +23,9 @@ trait DefaultListTrait
     private $doctrine;
 
     /**
-     * @var FilterInterface[]
+     * @var EventDispatcherInterface
      */
-    private $filters = [];
+    private $eventDispatcher;
 
     private function createQueryBuilder(Request $request): QueryBuilder
     {
@@ -30,37 +33,18 @@ trait DefaultListTrait
         $queryBuilder = $this->doctrine->getRepository($this->className)
             ->createQueryBuilder('e');
 
-        foreach ($this->filters as $filter) {
-            $filter->applyFilter($queryBuilder, $request);
-        }
+        $eventName = sprintf('%s.%s', DefaultCrudStrategy::EVENT_ADD_FILTERS, $request->get('_route'));
+
+        $this->eventDispatcher
+            ->dispatch($eventName, new AddFilterEvent($queryBuilder, $request, $this->doctrine->getManager()));
 
         return $queryBuilder;
     }
 
-    public function getResults(Request $request): iterable
+    public function getListResults(Request $request): PaginableCollection
     {
-        $page    = $request->get('page', 1);
-        $limit   = $request->get('limit', 30);
-        $order   = $request->get('order', []);
-
         $queryBuilder = $this->createQueryBuilder($request);
 
-        $queryBuilder->setMaxResults($limit)->setFirstResult(($page - 1) * $limit);
-
-        if ($order) {
-            foreach ($order as $key => $value) {
-                $queryBuilder->addOrderBy($key, $value);
-            }
-        }
-
-        return $queryBuilder->getQuery()->execute();
-    }
-
-    public function getTotals(Request $request): int
-    {
-        return (int) $this->createQueryBuilder($request)
-            ->select('COUNT(1)')
-            ->getQuery()
-            ->getScalarResult();
+        return new PaginableCollection($queryBuilder);
     }
 }
