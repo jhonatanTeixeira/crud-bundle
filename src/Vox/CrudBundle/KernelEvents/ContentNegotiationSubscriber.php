@@ -59,7 +59,10 @@ class ContentNegotiationSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
 
         if ($request->isMethod(Request::METHOD_PATCH) && $_SERVER['REQUEST_METHOD'] == Request::METHOD_POST) {
-            $request->setMethod($request->attributes->has('id') ? Request::METHOD_PUT : Request::METHOD_POST);
+            $method = $request->attributes->has('id') ? Request::METHOD_PUT : Request::METHOD_POST;
+            $request->setMethod($method);
+            $request->query->set('_method', $method);
+            $request->request->set('_method', $method);
         }
     }
 
