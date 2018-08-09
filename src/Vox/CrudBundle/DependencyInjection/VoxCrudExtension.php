@@ -49,8 +49,8 @@ class VoxCrudExtension extends Extension
             $listOptions     = $routeParams['list_options'] ?? [];
             $templates       = [
                 'formTemplate' => $routeParams['formTemplate'] ?? "/default/form.html.twig",
-                'listTemplate' => $routeParams['formTemplate'] ?? "/default/list.html.twig",
-                'viewTemplate' => $routeParams['formTemplate'] ?? "/default/view.html.twig",
+                'listTemplate' => $routeParams['listTemplate'] ?? "/default/list.html.twig",
+                'viewTemplate' => $routeParams['viewTemplate'] ?? "/default/view.html.twig",
             ];
 
             foreach ($operations as $operation) {
