@@ -2,7 +2,6 @@
 
 namespace Vox\CrudBundle\Controller;
 
-use Doctrine\ORM\QueryBuilder;
 use InvalidArgumentException;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -10,13 +9,12 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
-use Vox\CrudBundle\Crud\FilterInterface;
+use Vox\CrudBundle\Crud\AddFilterEvent;
 use Vox\CrudBundle\Crud\Strategy\CrudExtraValuesInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudListableInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudPostFlushableInterface;
 use Vox\CrudBundle\Crud\Strategy\CrudStrategyInterface;
 use Vox\CrudBundle\Crud\Strategy\DefaultCrudStrategy;
-use Vox\CrudBundle\Crud\Strategy\DefaultListTrait;
 use Vox\CrudBundle\Form\CrudFormFactoryInterface;
 
 class CrudController
@@ -58,7 +56,7 @@ class CrudController
     private $templates;
 
     /**
-     * @var FilterInterface[]
+     * @var array
      */
     private $listConfigs = [];
 
@@ -103,6 +101,17 @@ class CrudController
             ->setLimit($request->get('limit', 30))
             ->setPage($request->get('page', 1))
         ;
+
+        try {
+            $eventName = sprintf('%s.%s', CrudStrategyInterface::EVENT_ADD_FILTERS, $request->get('_route'));
+            $event = new AddFilterEvent($results->getQueryBuilder(), $request, $this->doctrine->getManager());
+
+            $this->eventDispatcher->dispatch($eventName, $event);
+            $this->eventDispatcher->dispatch(CrudStrategyInterface::EVENT_ADD_FILTERS, $event);
+        } catch (\TypeError $exception) {
+            // prevent errors if returned paginable collection isn't for a query builder
+            dump($exception);
+        }
 
         return $this->createParamList([
             'list'  => $results,

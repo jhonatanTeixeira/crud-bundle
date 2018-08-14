@@ -15,8 +15,6 @@ class DefaultCrudStrategy implements CrudStrategyInterface, CrudListableInterfac
 {
     use DefaultListTrait;
 
-    const EVENT_ADD_FILTERS = 'crud.event.add_list_filter';
-
     /**
      * @var string
      */

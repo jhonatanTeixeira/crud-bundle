@@ -22,21 +22,11 @@ trait DefaultListTrait
      */
     private $doctrine;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
-
     private function createQueryBuilder(Request $request): QueryBuilder
     {
         /* @var $queryBuilder QueryBuilder */
         $queryBuilder = $this->doctrine->getRepository($this->className)
             ->createQueryBuilder('e');
-
-        $eventName = sprintf('%s.%s', DefaultCrudStrategy::EVENT_ADD_FILTERS, $request->get('_route'));
-
-        $this->eventDispatcher
-            ->dispatch($eventName, new AddFilterEvent($queryBuilder, $request, $this->doctrine->getManager()));
 
         return $queryBuilder;
     }

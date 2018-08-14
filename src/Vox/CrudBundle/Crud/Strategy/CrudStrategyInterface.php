@@ -7,6 +7,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 interface CrudStrategyInterface
 {
+    const EVENT_ADD_FILTERS = 'crud.event.add_list_filter';
+
     public function persistDataObject(FormInterface $form);
     
     public function createDataObjectForPost(Request $request);

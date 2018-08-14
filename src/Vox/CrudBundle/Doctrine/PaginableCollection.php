@@ -9,6 +9,9 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 
 class PaginableCollection implements \IteratorAggregate, \Countable
 {
+    /**
+     * @var QueryBuilder|PersistentCollection
+     */
     private $dataSource;
 
     /**
@@ -81,6 +84,11 @@ class PaginableCollection implements \IteratorAggregate, \Countable
         throw new \InvalidArgumentException(
             "invalid type for paginator, only QueryBuilder or PersistentCollection allowed"
         );
+    }
+
+    public function getQueryBuilder(): QueryBuilder
+    {
+        return $this->dataSource;
     }
 
     public function toArray(): array
