@@ -48,7 +48,7 @@ class ContentNegotiationSubscriber implements EventSubscriberInterface
                 ['setResponse', 1],
             ],
             KernelEvents::REQUEST => [
-                ['disableFakePatch', 100],
+                ['disableFakePatch', 30],
                 ['deserialize'],
             ]
         ];
