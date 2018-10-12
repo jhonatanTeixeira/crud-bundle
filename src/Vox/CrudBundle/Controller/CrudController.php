@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
@@ -65,6 +66,11 @@ class CrudController
      */
     private $crudName;
 
+    /**
+     * @var string
+     */
+    private $afterSaveRedirectPath;
+
     public function __construct(
         string $className,
         string $typeClassName,
@@ -76,7 +82,8 @@ class CrudController
         array $templates,
         CrudStrategyInterface $crudStrategy = null,
         array $listConfigs = [],
-        string $crudName
+        string $crudName = null,
+        string $afterSaveRedirectPath = null
     ) {
         $this->className         = $className;
         $this->typeClassName     = $typeClassName;
@@ -89,6 +96,7 @@ class CrudController
         $this->strategy          = $crudStrategy ?? new DefaultCrudStrategy($className, $doctrine, $eventDispatcher);
         $this->listConfigs       = $listConfigs;
         $this->crudName          = $crudName;
+        $this->afterSaveRedirectPath = $afterSaveRedirectPath;
     }
 
     public function listAction(Request $request)
@@ -189,6 +197,10 @@ class CrudController
                 if ($response instanceof Response) {
                     return $response;
                 }
+            }
+
+            if (isset($this->afterSaveRedirectPath)) {
+                return new RedirectResponse($this->router->generate($this->afterSaveRedirectPath));
             }
         } else {
             $status = $request->isMethod('PATCH') ? 200 : 400;

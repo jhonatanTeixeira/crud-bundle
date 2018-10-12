@@ -33,6 +33,7 @@ class Configuration implements ConfigurationInterface
                     ->scalarNode('formTemplate')->end()
                     ->scalarNode('listTemplate')->end()
                     ->scalarNode('viewTemplate')->end()
+                    ->scalarNode('afterSaveRedirectPath')->end()
                     ->arrayNode('operations')
                         ->prototype('scalar')->end()
                     ->end()

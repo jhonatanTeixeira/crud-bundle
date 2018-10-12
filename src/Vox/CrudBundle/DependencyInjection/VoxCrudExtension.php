@@ -44,6 +44,7 @@ class VoxCrudExtension extends Extension
             $contextClass    = $routeParams['contextObject'] ?? CrudFormEvent::class;
             $controllerClass = $routeParams['controllerClass'] ?? CrudController::class;
             $strategy        = $routeParams['strategy'] ?? null;
+            $redirectPath    = $routeParams['afterSaveRedirectPath'] ?? null;
             $defaults        = ['_format' => 'html'];
             $requirements    = [];
             $listOptions     = $routeParams['list_options'] ?? [];
@@ -90,6 +91,13 @@ class VoxCrudExtension extends Extension
                         break;
                 }
 
+                $routeService = sprintf('route.%s.%s', $entityName, $action);
+                $routeName    = sprintf('%s_%s', $name, $action);
+
+                if (empty($redirectPath)) {
+                    $redirectPath = sprintf('%s_listAction', $name);;
+                }
+
                 $controller = new Definition(
                     $controllerClass,
                     [
@@ -103,9 +111,11 @@ class VoxCrudExtension extends Extension
                         $templates,
                         $strategy ? new Reference($strategy) : null,
                         $listOptions,
-                        $name
+                        $name,
+                        $redirectPath
                     ]
                 );
+
                 $controller->setPublic(true);
 
                 $controllerService = sprintf('controler.%s', $entityName);
@@ -125,9 +135,6 @@ class VoxCrudExtension extends Extension
                 $route->addMethodCall('setDefaults', [$defaults]);
                 $route->addMethodCall('setRequirements', [$requirements]);
                 $route->setPublic(false);
-
-                $routeService = sprintf('route.%s.%s', $entityName, $action);
-                $routeName    = sprintf('%s_%s', $name, $action);
 
                 $container->setDefinition($routeService, $route);
                 $routes->addMethodCall('add', [$routeName, new Reference($routeService)]);
