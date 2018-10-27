@@ -124,6 +124,8 @@ class CrudController
         return $this->createParamList([
             'list'  => $results,
             'total' => $results->count(),
+            'totalPages' => $results->getTotalPages(),
+            'currentPage' => $results->getPage(),
             'actions' => $this->listConfigs['actions'],
             'listFields' => $this->listConfigs['list_fields'] ?: $this->getListFields(),
             'listTitle' => $this->listConfigs['title'] ?? 'List data',

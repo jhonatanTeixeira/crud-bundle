@@ -45,6 +45,21 @@ class PaginableCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
+    public function getLimit(): int
+    {
+        return $this->limit;
+    }
+
+    public function getPage(): int
+    {
+        return $this->page;
+    }
+
+    public function getTotalPages()
+    {
+        return ceil($this->count() / ($this->limit ?? 1));
+    }
+
     private function getIteratorForQueryBuilder(QueryBuilder $queryBuilder)
     {
         if (isset($this->limit)) {
