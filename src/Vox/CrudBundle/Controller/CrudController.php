@@ -211,6 +211,18 @@ class CrudController
         return $this->createParamList(['form' => $form->createView(), 'status' => $status]);
     }
 
+    public function deleteAction(Request $request)
+    {
+        $entity = $this->doctrine->getManager()->find($this->className, $request->get('id', 0));
+        
+        if (!$entity) {
+            throw new NotFoundHttpException('entity not found');
+        }
+        
+        $this->doctrine->getManager()->remove($entity);
+        $this->doctrine->getManager()->flush();
+    }
+
     public function formAction(Request $request)
     {
         $form = $this->createForm($request);
