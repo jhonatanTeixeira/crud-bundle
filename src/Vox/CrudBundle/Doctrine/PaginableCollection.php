@@ -41,6 +41,7 @@ class PaginableCollection implements \IteratorAggregate, \Countable
     public function setPage(int $page): self
     {
         $this->page = $page;
+        $this->iterator = null;
 
         return $this;
     }
